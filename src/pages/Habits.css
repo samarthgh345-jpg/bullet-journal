@@ -1,0 +1,155 @@
+/* =========================
+   HABIT TRACKER
+========================= */
+
+.habits-page {
+  max-width: 1200px;
+  margin: auto;
+}
+
+.habit-container {
+  overflow-x: auto;
+  padding: 0; /* Override journal-card padding for edge-to-edge table */
+  padding-bottom: 8px; /* Room for scrollbar */
+}
+
+/* To maintain the background paper effect, the inner container needs min-width */
+.habit-container::-webkit-scrollbar {
+  height: 6px;
+}
+.habit-container::-webkit-scrollbar-thumb {
+  background: var(--ink-faint);
+  border-radius: 3px;
+}
+
+.habit-header,
+.habit-line {
+  display: flex;
+  min-width: 1050px;
+}
+
+.habit-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--border-light); /* Slight contrast for header row */
+  padding-left: 16px;
+}
+
+.habit-name-title,
+.habit-name-wrapper {
+  width: 140px;
+  flex-shrink: 0;
+  padding: 14px 10px;
+  border-right: 1px solid var(--border);
+}
+
+.habit-name-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ink-mid);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+}
+
+.habit-name-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.habit-name {
+  font-size: 0.85rem;
+  color: var(--ink);
+  font-weight: 450;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.habit-remove-icon {
+  opacity: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.habit-line:hover .habit-remove-icon {
+  opacity: 1;
+}
+
+.habit-days {
+  display: grid;
+  grid-template-columns: repeat(31, 30px);
+  flex: 1;
+}
+
+.habit-header .habit-days span {
+  text-align: center;
+  font-size: 0.65rem;
+  padding: 14px 0;
+  color: var(--ink-mid);
+  font-weight: 500;
+  border-right: 1px dashed var(--border);
+}
+
+.habit-line {
+  border-bottom: 1px dashed var(--border-light);
+  padding-left: 16px;
+}
+
+.habit-line:last-child {
+  border-bottom: none;
+}
+
+.habit-line .habit-days {
+  align-items: stretch;
+}
+
+.habit-cell {
+  width: 30px;
+  height: 46px;
+  border: none;
+  border-right: 1px dashed var(--border-light);
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--dot-empty);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  padding: 0;
+}
+
+.habit-cell:hover {
+  background: var(--highlight);
+  color: var(--dot-filled);
+}
+
+.habit-cell.completed {
+  color: var(--dot-filled);
+}
+
+.habit-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0;
+}
+
+.habit-summary {
+  margin-top: 32px;
+}
+
+/* Mobile */
+@media (max-width: 800px) {
+  .habit-container {
+    overflow-x: auto;
+  }
+  .habit-actions {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+}

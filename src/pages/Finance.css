@@ -1,0 +1,201 @@
+/* =========================
+   FINANCE PAGE
+========================= */
+
+.finance-page {
+  max-width: 900px;
+  margin: auto;
+}
+
+/* ─────────────────────────────
+   SUMMARY
+───────────────────────────── */
+.finance-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.finance-card {
+  padding: 24px;
+  min-height: auto;
+}
+
+.finance-card p {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--ink-mid);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.income-total,
+.expense-total,
+.balance-total {
+  font-family: var(--font-hand);
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.balance-total.negative {
+  color: #c44;
+}
+
+/* ─────────────────────────────
+   FORM
+───────────────────────────── */
+.finance-form-card {
+  margin-bottom: 24px;
+}
+
+.finance-form {
+  display: grid;
+  grid-template-columns: 1fr 130px 130px 150px 80px;
+  gap: 12px;
+  align-items: center;
+}
+
+.finance-input,
+.finance-select {
+  border: 1px dashed var(--border);
+  background: transparent;
+  padding: 10px 12px;
+  outline: none;
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: var(--ink);
+  transition: all var(--transition);
+  border-radius: 4px;
+  width: 100%;
+}
+
+.finance-input:focus,
+.finance-select:focus {
+  border-color: var(--ink-mid);
+  background: var(--highlight);
+}
+
+.finance-input::placeholder {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+/* Dropdown specific */
+.finance-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b0aaa0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat, repeat;
+  background-position: right .7em top 50%, 0 0;
+  background-size: .65em auto, 100%;
+}
+
+.finance-select option {
+  background: var(--bg-card);
+  color: var(--ink);
+}
+
+/* ─────────────────────────────
+   TRANSACTIONS
+───────────────────────────── */
+.transactions-card {
+  margin-top: 24px;
+}
+
+.transactions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+
+.transactions-header h3 {
+  margin-bottom: 0;
+}
+
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.transaction-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: transparent;
+  border-bottom: 1px dashed var(--border-light);
+  transition: background var(--transition);
+  position: relative;
+}
+
+.transaction-item:hover {
+  background: var(--highlight);
+}
+
+.transaction-item:hover .remove-btn {
+  opacity: 1;
+}
+
+.transaction-item:last-child {
+  border-bottom: none;
+}
+
+.transaction-info {
+  flex: 1;
+}
+
+.transaction-info > p {
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.transaction-meta {
+  display: flex;
+  gap: 8px;
+}
+
+.income-text {
+  font-size: 1rem;
+  color: #4a9; /* Subdued green */
+  font-family: var(--font-body);
+  font-weight: 600;
+  min-width: 80px;
+  text-align: right;
+}
+
+.expense-text {
+  font-size: 1rem;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 500;
+  min-width: 80px;
+  text-align: right;
+}
+
+/* ─────────────────────────────
+   MOBILE
+───────────────────────────── */
+@media (max-width: 900px) {
+  .finance-form {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 650px) {
+  .finance-summary {
+    grid-template-columns: 1fr;
+  }
+  .finance-form {
+    grid-template-columns: 1fr;
+  }
+}

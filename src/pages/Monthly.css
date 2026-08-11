@@ -1,0 +1,254 @@
+/* =========================
+   MONTHLY PAGE
+========================= */
+
+.monthly-page {
+  max-width: 1000px;
+  margin: auto;
+}
+
+/* =========================
+   CALENDAR
+========================= */
+
+.calendar {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle grid overlay */
+.calendar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.weekdays span {
+  text-align: center;
+  padding: 10px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--ink-mid);
+  font-weight: 500;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-left: 1px solid var(--border-light);
+  border-top: 1px solid var(--border-light);
+  position: relative;
+}
+
+.calendar-day {
+  min-height: 110px;
+  border-right: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+  padding: 8px;
+  cursor: pointer;
+  transition: background var(--transition);
+  position: relative;
+}
+
+.calendar-day:hover {
+  background: var(--highlight);
+}
+
+.calendar-day.empty {
+  background: transparent;
+  cursor: default;
+}
+
+.calendar-day.empty:hover {
+  background: transparent;
+}
+
+.day-number {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ink-light);
+  display: block;
+  margin-bottom: 8px;
+  text-align: right;
+}
+
+.day-events {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.calendar-event {
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-size: 0.7rem;
+  padding: 4px 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  transition: all var(--transition);
+}
+
+.calendar-event:hover {
+  opacity: 0.8;
+  text-decoration: line-through;
+}
+
+/* =========================
+   MONTHLY BOTTOM
+========================= */
+
+.monthly-bottom {
+  margin-top: 24px;
+}
+
+.notes-box {
+  width: 100%;
+  min-height: 180px;
+  resize: vertical;
+  border: none;
+  outline: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 27px,
+    var(--border-light) 28px
+  );
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  line-height: 28px;
+  padding: 2px 5px;
+  color: var(--ink);
+}
+
+.notes-box::placeholder {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+/* =========================
+   EVENT PANEL
+========================= */
+
+.event-panel {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+}
+
+.event-panel-content {
+  position: relative;
+  width: 380px;
+  max-width: 90vw;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 35px;
+  box-shadow: var(--shadow-lg);
+}
+
+.close-button {
+  position: absolute;
+  right: 15px;
+  top: 15px;
+  border: none;
+  background: none;
+  color: var(--ink-light);
+  font-size: 20px;
+  cursor: pointer;
+  transition: color var(--transition);
+}
+
+.close-button:hover {
+  color: var(--ink);
+}
+
+.event-input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  padding: 12px;
+  outline: none;
+  font-family: inherit;
+  font-size: 0.9rem;
+  transition: border-color var(--transition);
+}
+
+.event-input:focus {
+  border-color: var(--ink-mid);
+}
+
+.add-button {
+  margin-top: 16px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: opacity var(--transition);
+}
+
+.add-button:hover {
+  opacity: 0.9;
+}
+
+/* =========================
+   MONTHLY MOBILE
+========================= */
+
+@media (max-width: 800px) {
+  .calendar {
+    padding: 12px;
+  }
+
+  .calendar-day {
+    min-height: 80px;
+    padding: 4px;
+  }
+
+  .weekdays span {
+    font-size: 0.6rem;
+    padding: 6px 2px;
+  }
+
+  .day-number {
+    font-size: 0.7rem;
+    margin-bottom: 4px;
+  }
+
+  .calendar-event {
+    font-size: 0.6rem;
+    padding: 2px 4px;
+  }
+}

@@ -1,0 +1,160 @@
+/* ═══════════════════════════════════════════════
+   INDEX — Reset + Design Tokens
+   ═══════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+/* ─── Light theme (default) ─── */
+:root {
+  --bg:         #f5f3ee;
+  --bg-sidebar: #eceae3;
+  --bg-card:    #faf9f5;
+  --bg-page:    #f5f3ee;
+
+  --ink:        #222;
+  --ink-mid:    #555;
+  --ink-light:  #888;
+  --ink-faint:  #bbb;
+
+  --border:     #d5d1c7;
+  --border-light: #e2dfd6;
+
+  --accent:     #222;
+  --accent-fg:  #fff;
+
+  --grid-line:  rgba(180, 175, 165, 0.18);
+  --grid-strong: rgba(160, 155, 145, 0.3);
+
+  --highlight:  rgba(255, 220, 100, 0.18);
+  --dot-filled: #333;
+  --dot-empty:  #ccc;
+
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.04);
+  --shadow-md:  0 2px 8px rgba(0,0,0,0.06);
+  --shadow-lg:  0 4px 20px rgba(0,0,0,0.08);
+
+  --font-body:  'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-hand:  'Caveat', cursive;
+
+  --sidebar-w:  230px;
+  --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Dark theme ─── */
+[data-theme="dark"] {
+  --bg:         #151518;
+  --bg-sidebar: #1c1c20;
+  --bg-card:    #222228;
+  --bg-page:    #151518;
+
+  --ink:        #e4e0d8;
+  --ink-mid:    #aaa69e;
+  --ink-light:  #7a776f;
+  --ink-faint:  #4a4840;
+
+  --border:     #333330;
+  --border-light: #2a2a28;
+
+  --accent:     #e4e0d8;
+  --accent-fg:  #1a1a1e;
+
+  --grid-line:  rgba(100, 98, 90, 0.12);
+  --grid-strong: rgba(100, 98, 90, 0.22);
+
+  --highlight:  rgba(255, 220, 100, 0.06);
+  --dot-filled: #d4d0c8;
+  --dot-empty:  #444;
+
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.2);
+  --shadow-md:  0 2px 8px rgba(0,0,0,0.3);
+  --shadow-lg:  0 4px 20px rgba(0,0,0,0.4);
+}
+
+/* ─── Reset ─── */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--ink);
+}
+
+button,
+input {
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--highlight);
+  color: var(--ink);
+}
+
+/* ─── Graph Paper (subtle, behind everything) ─── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(var(--grid-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-strong) 1px, transparent 1px);
+  background-size:
+    20px 20px,
+    20px 20px,
+    100px 100px,
+    100px 100px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 4px;
+}
+
+.notes-box {
+  width: 100%;
+  min-height: 180px;
+  resize: vertical;
+  border: none;
+  outline: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 27px,
+    var(--border-light) 28px
+  );
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  line-height: 28px;
+  padding: 2px 5px;
+  color: var(--ink);
+}
+
+.notes-box::placeholder {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--ink-light); }
