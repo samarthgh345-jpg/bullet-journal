@@ -59,15 +59,13 @@ function Habits() {
   };
 
   const handleDeleteHabit = async (id) => {
-    if (window.confirm("Delete this habit?")) {
-      try {
-        await deleteHabit(id);
-        setHabits((currentHabits) =>
-          currentHabits.filter((habit) => habit._id !== id)
-        );
-      } catch (error) {
-        setError(error.message);
-      }
+    try {
+      await deleteHabit(id);
+      setHabits((currentHabits) =>
+        currentHabits.filter((habit) => habit._id !== id)
+      );
+    } catch (error) {
+      setError(error.message);
     }
   };
 

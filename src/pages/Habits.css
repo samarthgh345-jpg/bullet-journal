@@ -78,6 +78,13 @@
   opacity: 1;
 }
 
+/* Touch devices: no hover state, always show the delete button */
+@media (hover: none) {
+  .habit-remove-icon {
+    opacity: 1;
+  }
+}
+
 .habit-days {
   display: grid;
   grid-template-columns: repeat(31, 30px);

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useJournal } from "../context/JournalContext";
+import { useState, useEffect } from "react";
+import { getGoals, createGoal, updateGoal, deleteGoal, getWeeklyTasks, createWeeklyTask, updateWeeklyTask, deleteWeeklyTask } from "../services/api";
 
 const days = [
   "monday",
@@ -12,91 +12,116 @@ const days = [
 ];
 
 function Weekly() {
-  const {
-    weeklyTasks,
-    setWeeklyTasks,
-    weeklyGoals: goals,
-    setWeeklyGoals: setGoals,
-  } = useJournal();
+  const [weeklyTasks, setWeeklyTasks] = useState({
+    monday: [], tuesday: [], wednesday: [], thursday: [],
+    friday: [], saturday: [], sunday: [],
+  });
+  const [loadingTasks, setLoadingTasks] = useState(true);
+  const [tasksError, setTasksError] = useState("");
+
+  useEffect(() => {
+    getWeeklyTasks()
+      .then(setWeeklyTasks)
+      .catch((err) => setTasksError(err.message))
+      .finally(() => setLoadingTasks(false));
+  }, []);
+
+  const [goals, setGoals] = useState([]);
+  const [loadingGoals, setLoadingGoals] = useState(true);
+  const [goalsError, setGoalsError] = useState("");
+
+  useEffect(() => {
+    getGoals("weekly")
+      .then(setGoals)
+      .catch((err) => setGoalsError(err.message))
+      .finally(() => setLoadingGoals(false));
+  }, []);
 
   const [selectedDay, setSelectedDay] = useState("monday");
   const [taskText, setTaskText] = useState("");
 
   const [goalText, setGoalText] = useState("");
 
-  const addTask = (e) => {
+  const addTask = async (e) => {
     e.preventDefault();
-
     if (!taskText.trim()) return;
 
-    const newTask = {
-      id: Date.now(),
-      text: taskText.trim(),
-      completed: false,
-    };
+    try {
+      const newTask = await createWeeklyTask({
+        text: taskText,
+        day: selectedDay,
+      });
 
-    setWeeklyTasks((previous) => ({
-      ...previous,
-      [selectedDay]: [
-        ...previous[selectedDay],
-        newTask,
-      ],
-    }));
-
-    setTaskText("");
+      setWeeklyTasks((previous) => ({
+        ...previous,
+        [selectedDay]: [...previous[selectedDay], newTask],
+      }));
+      setTaskText("");
+    } catch (error) {
+      console.error("Failed to add task:", error);
+    }
   };
 
-  const toggleTask = (day, id) => {
-    setWeeklyTasks((previous) => ({
-      ...previous,
-      [day]: previous[day].map((task) =>
-        task.id === id
-          ? {
-              ...task,
-              completed: !task.completed,
-            }
-          : task
-      ),
-    }));
+  const toggleTask = async (day, id) => {
+    const taskToToggle = weeklyTasks[day].find(t => t._id === id || t.id === id);
+    if (!taskToToggle) return;
+    const realId = taskToToggle._id || taskToToggle.id;
+    try {
+      const updatedTask = await updateWeeklyTask(realId, { completed: !taskToToggle.completed });
+      setWeeklyTasks((previous) => ({
+        ...previous,
+        [day]: previous[day].map((task) =>
+          (task._id === realId || task.id === realId) ? updatedTask : task
+        ),
+      }));
+    } catch (error) {
+      console.error("Failed to toggle task:", error);
+    }
   };
 
-  const deleteTask = (day, id) => {
-    setWeeklyTasks((previous) => ({
-      ...previous,
-      [day]: previous[day].filter(
-        (task) => task.id !== id
-      ),
-    }));
+  const deleteTask = async (day, id) => {
+    try {
+      await deleteWeeklyTask(id);
+      setWeeklyTasks((previous) => ({
+        ...previous,
+        [day]: previous[day].filter((task) => (task._id !== id && task.id !== id)),
+      }));
+    } catch (error) {
+      console.error("Failed to delete task:", error);
+    }
   };
 
-  const addGoal = (e) => {
+  const addGoal = async (e) => {
     e.preventDefault();
-
     if (!goalText.trim()) return;
 
-    setGoals((previous) => [
-      ...previous,
-      {
-        id: Date.now(),
-        text: goalText.trim(),
-        completed: false,
-      },
-    ]);
-
-    setGoalText("");
+    try {
+      const newGoal = await createGoal({ text: goalText, scope: "weekly" });
+      setGoals([...goals, newGoal]);
+      setGoalText("");
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const toggleGoal = (id) => {
-    setGoals((previous) =>
-      previous.map((goal) =>
-        goal.id === id
-          ? {
-              ...goal,
-              completed: !goal.completed,
-            }
-          : goal
-      )
-    );
+  const toggleGoal = async (id) => {
+    const goalToUpdate = goals.find(g => g._id === id);
+    if (!goalToUpdate) return;
+    try {
+      const updatedGoal = await updateGoal(id, { completed: !goalToUpdate.completed });
+      setGoals(goals.map((goal) => goal._id === id ? updatedGoal : goal));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleDeleteGoal = async (id) => {
+    try {
+      await deleteGoal(id);
+      setGoals(goals.filter((g) => g._id !== id));
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -189,12 +214,12 @@ function Weekly() {
                         ? "weekly-task completed"
                         : "weekly-task"
                     }
-                    key={task.id}
+                    key={task._id || task.id}
                   >
 
                     <button
                       onClick={() =>
-                        toggleTask(day, task.id)
+                        toggleTask(day, task._id || task.id)
                       }
                     >
                       {task.completed ? "✓" : ""}
@@ -207,7 +232,7 @@ function Weekly() {
                     <button
                       className="weekly-delete"
                       onClick={() =>
-                        deleteTask(day, task.id)
+                        deleteTask(day, task._id || task.id)
                       }
                     >
                       ×
@@ -260,20 +285,27 @@ function Weekly() {
 
           <div className="goal-list">
 
-            {goals.map((goal) => (
+            {loadingGoals ? (
+              <p className="weekly-empty" style={{ margin: "10px 0" }}>loading...</p>
+            ) : goalsError ? (
+              <p className="weekly-empty" style={{ margin: "10px 0", color: "#d9534f" }}>{goalsError}</p>
+            ) : goals.length === 0 ? (
+              <p className="weekly-empty" style={{ margin: "10px 0" }}>no goals set</p>
+            ) : (
+              goals.map((goal) => (
 
-              <div
-                className={
-                  goal.completed
-                    ? "goal-item completed"
-                    : "goal-item"
-                }
-                key={goal.id}
-              >
+                <div
+                  className={
+                    goal.completed
+                      ? "goal-item completed"
+                      : "goal-item"
+                  }
+                  key={goal._id}
+                >
 
                 <button
                   onClick={() =>
-                    toggleGoal(goal.id)
+                    toggleGoal(goal._id)
                   }
                 >
                   {goal.completed ? "✓" : ""}
@@ -283,10 +315,16 @@ function Weekly() {
                   {goal.text}
                 </span>
 
+                <button
+                  className="goal-delete"
+                  onClick={() => handleDeleteGoal(goal._id)}
+                >
+                  ×
+                </button>
+
               </div>
-
-            ))}
-
+              ))
+            )}
           </div>
 
         </div>

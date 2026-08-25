@@ -1,32 +1,68 @@
-import { useState } from "react";
-import { useJournal } from "../context/JournalContext";
+import { useState, useEffect } from "react";
+import { getFinance, addFinance, deleteFinance } from "../services/api";
 import "./Finance.css";
 
 function Finance() {
-  const { transactions, addTransaction, deleteTransaction } = useJournal();
+  const currencyMap = { INR: "₹", USD: "$", EUR: "€", GBP: "£" };
+  const currency = currencyMap[localStorage.getItem("bulletJournalCurrency")] || "₹";
 
+  const [transactions, setTransactions] = useState([]);
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [type, setType] = useState("expense");
   const [category, setCategory] = useState("food");
+  
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const handleAddTransaction = (e) => {
+  useEffect(() => {
+    const loadFinance = async () => {
+      try {
+        setLoading(true);
+        const data = await getFinance();
+        setTransactions(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadFinance();
+  }, []);
+
+  const handleAddTransaction = async (e) => {
     e.preventDefault();
 
     if (!description.trim() || !amount || Number(amount) <= 0) {
+      setError("Please provide a valid description and amount.");
       return;
     }
 
-    addTransaction({
-      description: description.trim(),
-      amount: Number(amount),
-      type,
-      category,
-      date: new Date().toISOString(),
-    });
+    try {
+      const newTransaction = await addFinance({
+        description: description.trim(),
+        amount: Number(amount),
+        type,
+        category,
+        date: new Date().toISOString(),
+      });
 
-    setDescription("");
-    setAmount("");
+      setTransactions([newTransaction, ...transactions]);
+      setDescription("");
+      setAmount("");
+      setError("");
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleDeleteTransaction = async (id) => {
+    try {
+      await deleteFinance(id);
+      setTransactions(transactions.filter((t) => t._id !== id));
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   const income = transactions
@@ -47,22 +83,24 @@ function Finance() {
         <p className="date">keep track of where your money goes</p>
       </div>
 
+      {error && <p className="form-error" style={{ color: "#d9534f" }}>{error}</p>}
+
       {/* SUMMARY */}
       <div className="finance-summary">
         <div className="journal-card finance-card">
           <p>income</p>
-          <h3 className="income-total">₹{income.toLocaleString("en-IN")}</h3>
+          <h3 className="income-total">{currency}{loading ? "-" : income.toLocaleString("en-IN")}</h3>
         </div>
 
         <div className="journal-card finance-card">
           <p>expenses</p>
-          <h3 className="expense-total">₹{expenses.toLocaleString("en-IN")}</h3>
+          <h3 className="expense-total">{currency}{loading ? "-" : expenses.toLocaleString("en-IN")}</h3>
         </div>
 
         <div className="journal-card finance-card">
           <p>remaining</p>
           <h3 className={balance < 0 ? "negative balance-total" : "balance-total"}>
-            ₹{balance.toLocaleString("en-IN")}
+            {currency}{loading ? "-" : balance.toLocaleString("en-IN")}
           </h3>
         </div>
       </div>
@@ -123,12 +161,14 @@ function Finance() {
           <span className="count-badge">{transactions.length} entries</span>
         </div>
 
-        {transactions.length === 0 ? (
+        {loading ? (
+          <p style={{ padding: "20px" }}>Loading transactions...</p>
+        ) : transactions.length === 0 ? (
           <div className="empty-state">no transactions yet ✦</div>
         ) : (
           <div className="transaction-list">
             {transactions.map((transaction) => (
-              <div className="transaction-item" key={transaction.id}>
+              <div className="transaction-item" key={transaction._id}>
                 <div className="transaction-info">
                   <p>{transaction.description}</p>
                   <div className="transaction-meta">
@@ -145,12 +185,12 @@ function Finance() {
                   }
                 >
                   {transaction.type === "income" ? "+" : "-"}
-                  ₹{transaction.amount.toLocaleString("en-IN")}
+                  {currency}{transaction.amount.toLocaleString("en-IN")}
                 </strong>
 
                 <button
                   className="delete-task remove-btn"
-                  onClick={() => deleteTransaction(transaction.id)}
+                  onClick={() => handleDeleteTransaction(transaction._id)}
                   title="Delete transaction"
                 >
                   ×

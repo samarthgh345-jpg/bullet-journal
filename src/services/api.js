@@ -129,3 +129,146 @@ export const deleteEvent = (id) => {
     method: "DELETE",
   });
 };
+
+// ========================
+// FINANCE
+// ========================
+
+export const getFinance = () => {
+  return request("/finance");
+};
+
+export const addFinance = (data) => {
+  return request("/finance", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+};
+
+export const deleteFinance = (id) => {
+  return request(`/finance/${id}`, {
+    method: "DELETE",
+  });
+};
+
+// ========================
+// NOTES
+// ========================
+
+export const getNotes = () => {
+  return request("/notes");
+};
+
+export const createNote = () => {
+  return request("/notes", {
+    method: "POST",
+  });
+};
+
+export const updateNote = (id, data) => {
+  return request(`/notes/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+};
+
+export const deleteNote = (id) => {
+  return request(`/notes/${id}`, {
+    method: "DELETE",
+  });
+};
+
+// ========================
+// WISHLIST
+// ========================
+
+export const getWishlist = () => {
+  return request("/wishlist");
+};
+
+export const createWishlistItem = (data) => {
+  return request("/wishlist", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+};
+
+export const updateWishlistItem = (id, data) => {
+  return request(`/wishlist/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+};
+
+export const deleteWishlistItem = (id) => {
+  return request(`/wishlist/${id}`, {
+    method: "DELETE",
+  });
+};
+
+// ========================
+// GOALS
+// ========================
+
+export const getGoals = (scope) => {
+  const query = scope ? `?scope=${scope}` : "";
+  return request(`/goals${query}`);
+};
+
+export const createGoal = (data) => {
+  return request("/goals", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+};
+
+export const updateGoal = (id, data) => {
+  return request(`/goals/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+};
+
+export const deleteGoal = (id) => {
+  return request(`/goals/${id}`, {
+    method: "DELETE",
+  });
+};
+
+// ========================
+// WEEKLY TASKS
+// ========================
+
+export const getWeeklyTasks = () => {
+  return request("/weekly-tasks");
+};
+
+export const createWeeklyTask = (data) => {
+  return request("/weekly-tasks", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+};
+
+export const updateWeeklyTask = (id, data) => {
+  return request(`/weekly-tasks/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+};
+
+export const deleteWeeklyTask = (id) => {
+  return request(`/weekly-tasks/${id}`, {
+    method: "DELETE",
+  });
+};
+
+// ========================
+// SYSTEM
+// ========================
+
+export const clearJournalData = () => {
+  return request("/journal/clear", {
+    method: "DELETE",
+  });
+};

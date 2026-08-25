@@ -9,8 +9,14 @@ const testRoutes = require("./routes/testRoutes");
 const taskRoutes = require("./routes/taskRoutes");
 const habitRoutes = require("./routes/habitRoutes");
 const eventRoutes = require("./routes/eventRoutes");
+const financeRoutes = require("./routes/financeRoutes");
+const noteRoutes = require("./routes/noteRoutes");
+const wishlistRoutes = require("./routes/wishlistRoutes");
+const goalRoutes = require("./routes/goalRoutes");
+const weeklyTaskRoutes = require("./routes/weeklyTaskRoutes");
+const journalRoutes = require("./routes/journalRoutes");
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 connectDB();
 
@@ -36,6 +42,12 @@ app.use("/api/test", testRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/habits", habitRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/finance", financeRoutes);
+app.use("/api/notes", noteRoutes);
+app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/goals", goalRoutes);
+app.use("/api/weekly-tasks", weeklyTaskRoutes);
+app.use("/api/journal", journalRoutes);
 
 /* =========================
    FRONTEND ROUTING
@@ -61,9 +73,9 @@ if (process.env.NODE_ENV === "production" && !process.env.VERCEL) {
    START SERVER / EXPORT FOR VERCEL
 ========================= */
 
-if (process.env.NODE_ENV !== "production" || process.env.RUN_LOCAL) {
+if (!process.env.VERCEL) {
   app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
   });
 }
 

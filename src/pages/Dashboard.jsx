@@ -1,13 +1,65 @@
-import { useJournal } from "../context/JournalContext";
+import { useEffect, useState } from "react";
+import { getTasks, updateTask, getHabits, toggleHabit, getFinance, getWishlist } from "../services/api";
+import { getDateKey } from "../utils/date";
 
 function Dashboard() {
+  const currencyMap = { INR: "₹", USD: "$", EUR: "€", GBP: "£" };
+  const currency = currencyMap[localStorage.getItem("bulletJournalCurrency")] || "₹";
 
-  const {
-    tasks,
-    habits,
-    transactions,
-    wishlist,
-  } = useJournal();
+  const [tasks, setTasks] = useState([]);
+  const [habits, setHabits] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [wishlist, setWishlist] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [tasksData, habitsData, financeData, wishlistData] = await Promise.all([
+          getTasks(),
+          getHabits(),
+          getFinance(),
+          getWishlist()
+        ]);
+        if (isMounted) {
+          setTasks(tasksData);
+          setHabits(habitsData);
+          setTransactions(financeData);
+          setWishlist(wishlistData);
+        }
+      } catch (error) {
+        console.error("Failed to load dashboard data", error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+    fetchData();
+    return () => { isMounted = false; };
+  }, []);
+
+  const todayStr = getDateKey(new Date());
+
+  const handleToggleTask = async (task) => {
+    try {
+      const updatedTask = await updateTask(task._id, { completed: !task.completed });
+      setTasks(tasks.map(t => (t._id === updatedTask._id ? updatedTask : t)));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleToggleHabit = async (habit) => {
+    try {
+      const updatedHabit = await toggleHabit(habit._id, todayStr);
+      setHabits(habits.map(h => (h._id === updatedHabit._id ? updatedHabit : h)));
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
 
   /* =========================
@@ -126,11 +178,11 @@ function Dashboard() {
           <span>tasks</span>
 
           <strong>
-            {completedTasks}/{tasks.length}
+            {loading ? "-" : `${completedTasks}/${tasks.length}`}
           </strong>
 
           <small>
-            {pendingTasks} remaining
+            {loading ? "loading..." : `${pendingTasks} remaining`}
           </small>
 
         </div>
@@ -141,7 +193,7 @@ function Dashboard() {
           <span>habits</span>
 
           <strong>
-            {habitCount}
+            {loading ? "-" : habitCount}
           </strong>
 
           <small>
@@ -156,7 +208,7 @@ function Dashboard() {
           <span>balance</span>
 
           <strong>
-            ₹{balance.toLocaleString("en-IN")}
+            {currency}{balance.toLocaleString("en-IN")}
           </strong>
 
           <small>
@@ -204,13 +256,19 @@ function Dashboard() {
             </div>
 
             <span>
-              {taskPercentage}%
+              {loading ? "-" : `${taskPercentage}%`}
             </span>
 
           </div>
 
 
-          {tasks.length === 0 ? (
+          {loading ? (
+
+            <p className="dashboard-empty">
+              loading tasks...
+            </p>
+
+          ) : tasks.length === 0 ? (
 
             <p className="dashboard-empty">
               no tasks yet...
@@ -229,7 +287,9 @@ function Dashboard() {
                         ? "dashboard-task completed"
                         : "dashboard-task"
                     }
-                    key={task.id}
+                    key={task._id}
+                    onClick={() => handleToggleTask(task)}
+                    style={{ cursor: "pointer" }}
                   >
 
                     <span className="dashboard-check">
@@ -239,7 +299,7 @@ function Dashboard() {
                     </span>
 
                     <span>
-                      {task.text}
+                      {task.title}
                     </span>
 
                   </div>
@@ -268,7 +328,7 @@ function Dashboard() {
               <h3>finance</h3>
             </div>
 
-            <span>₹</span>
+            <span>{currency}</span>
 
           </div>
 
@@ -279,7 +339,7 @@ function Dashboard() {
               <span>income</span>
 
               <strong>
-                ₹
+                {currency}
                 {income.toLocaleString(
                   "en-IN"
                 )}
@@ -291,7 +351,7 @@ function Dashboard() {
               <span>expenses</span>
 
               <strong>
-                ₹
+                {currency}
                 {expenses.toLocaleString(
                   "en-IN"
                 )}
@@ -306,7 +366,7 @@ function Dashboard() {
               </span>
 
               <strong>
-                ₹
+                {currency}
                 {balance.toLocaleString(
                   "en-IN"
                 )}
@@ -334,13 +394,19 @@ function Dashboard() {
             </div>
 
             <span>
-              {habitCount}
+              {loading ? "-" : habitCount}
             </span>
 
           </div>
 
 
-          {habits.length === 0 ? (
+          {loading ? (
+
+            <p className="dashboard-empty">
+              loading habits...
+            </p>
+
+          ) : habits.length === 0 ? (
 
             <p className="dashboard-empty">
               no habits yet...
@@ -351,32 +417,34 @@ function Dashboard() {
             <div className="dashboard-habits">
 
               {habits.slice(0, 5).map(
-                (habit, index) => (
+                (habit, index) => {
+                  const completed = habit.completedDates?.includes(todayStr);
+                  return (
 
                   <div
                     className="dashboard-habit"
                     key={
-                      habit.id ||
-                      habit.name ||
+                      habit._id ||
                       index
                     }
+                    onClick={() => handleToggleHabit(habit)}
+                    style={{ cursor: "pointer" }}
                   >
 
                     <span>
                       {habit.name ||
-                        habit.title ||
                         `habit ${index + 1}`}
                     </span>
 
                     <span>
-                      {habit.completed
+                      {completed
                         ? "✓"
                         : "○"}
                     </span>
 
                   </div>
 
-                )
+                )}
               )}
 
             </div>
@@ -427,7 +495,7 @@ function Dashboard() {
                         ? "dashboard-wishlist-item completed"
                         : "dashboard-wishlist-item"
                     }
-                    key={item.id}
+                    key={item._id}
                   >
 
                     <span>

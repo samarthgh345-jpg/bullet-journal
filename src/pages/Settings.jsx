@@ -1,18 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { useJournal } from "../context/JournalContext";
+import {
+  getTasks, createTask, updateTask,
+  getHabits, createHabit,
+  getFinance, addFinance,
+  getNotes, createNote, updateNote,
+  getWishlist, createWishlistItem, updateWishlistItem,
+  getEvents, createEvent,
+  getGoals, createGoal, updateGoal,
+  getWeeklyTasks, createWeeklyTask, updateWeeklyTask,
+  clearJournalData
+} from "../services/api";
 
 function Settings() {
-  const {
-    tasks,
-    habits,
-    transactions,
-    wishlist,
-    notes,
-    events,
-    monthlyGoals,
-    weeklyTasks,
-    weeklyGoals,
-  } = useJournal();
 
   const fileInputRef = useRef(null);
 
@@ -80,72 +79,68 @@ function Settings() {
      EXPORT
   ========================= */
 
-  const exportJournal = () => {
-    const journalData = {
-      version: 1,
+  const exportJournal = async () => {
+    setMessage("preparing export...");
+    try {
+      const [
+        tasks,
+        weeklyTasks,
+        habits,
+        events,
+        transactions,
+        notes,
+        wishlist,
+        monthlyGoals,
+        weeklyGoals
+      ] = await Promise.all([
+        getTasks(),
+        getWeeklyTasks(),
+        getHabits(),
+        getEvents(),
+        getFinance(),
+        getNotes(),
+        getWishlist(),
+        getGoals("monthly"),
+        getGoals("weekly")
+      ]);
 
-      exportedAt:
-        new Date().toISOString(),
+      const journalData = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        tasks,
+        habits,
+        transactions,
+        wishlist,
+        notes,
+        events,
+        monthlyGoals,
+        weeklyGoals,
+        weeklyTasks,
+        settings: {
+          theme,
+          currency,
+          firstDay,
+        },
+      };
 
-      tasks,
-      habits,
-      transactions,
-      wishlist,
-      notes,
-      events,
-      monthlyGoals,
-      weeklyTasks,
-      weeklyGoals,
+      const json = JSON.stringify(journalData, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `bullet-journal-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
-      settings: {
-        theme,
-        currency,
-        firstDay,
-      },
-    };
-
-    const json = JSON.stringify(
-      journalData,
-      null,
-      2
-    );
-
-    const blob = new Blob(
-      [json],
-      {
-        type: "application/json",
-      }
-    );
-
-    const url =
-      URL.createObjectURL(blob);
-
-    const link =
-      document.createElement("a");
-
-    link.href = url;
-
-    link.download =
-      `bullet-journal-${new Date()
-        .toISOString()
-        .slice(0, 10)}.json`;
-
-    document.body.appendChild(link);
-
-    link.click();
-
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(url);
-
-    setMessage(
-      "journal exported successfully."
-    );
-
-    setTimeout(
-      () => setMessage(""),
-      3000
-    );
+      setMessage("journal exported successfully.");
+      setTimeout(() => setMessage(""), 3000);
+    } catch (error) {
+      console.error("Export error:", error);
+      setMessage("could not export journal.");
+      setTimeout(() => setMessage(""), 3000);
+    }
   };
 
 
@@ -154,145 +149,148 @@ function Settings() {
   ========================= */
 
   const importJournal = (event) => {
-    const file =
-      event.target.files?.[0];
-
+    const file = event.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
 
-    reader.onload = (e) => {
-
+    reader.onload = async (e) => {
       try {
-
-        const data = JSON.parse(
-          e.target.result
-        );
-
-        if (
-          !data ||
-          typeof data !== "object"
-        ) {
-          throw new Error(
-            "Invalid file"
-          );
+        const data = JSON.parse(e.target.result);
+        if (!data || typeof data !== "object" || !data.version) {
+          throw new Error("Invalid file format");
         }
 
+        setMessage("importing data... this may take a moment.");
 
-        /*
-          Save imported data directly
-          into localStorage.
+        // Import Tasks
+        if (Array.isArray(data.tasks)) {
+          for (const item of data.tasks) {
+             try { 
+               const created = await createTask({ 
+                 title: item.title || item.text || "Untitled Task",
+                 priority: item.priority,
+                 dueDate: item.dueDate
+               }); 
+               if (item.completed) {
+                 await updateTask(created._id || created.id, { completed: true });
+               }
+             } catch (err) { console.error(err); }
+          }
+        }
+        
+        // Import Weekly Tasks
+        if (data.weeklyTasks && typeof data.weeklyTasks === 'object') {
+          for (const day of ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]) {
+            if (Array.isArray(data.weeklyTasks[day])) {
+              for (const item of data.weeklyTasks[day]) {
+                try { 
+                  const created = await createWeeklyTask({ text: item.text || "Untitled", day });
+                  if (item.completed) {
+                    await updateWeeklyTask(created._id || created.id, { completed: true });
+                  }
+                } catch (err) { console.error(err); }
+              }
+            }
+          }
+        }
+        
+        // Import Habits
+        if (Array.isArray(data.habits)) {
+          for (const item of data.habits) {
+             try { await createHabit({ name: item.name || item.text, days: item.days, streak: item.streak }); } catch (err) { console.error(err); }
+          }
+        }
 
-          The easiest way to make
-          every page reload it is to
-          reload the application after
-          importing.
-        */
+        // Import Finance (Transactions)
+        if (Array.isArray(data.transactions)) {
+          for (const item of data.transactions) {
+             try { await addFinance({ description: item.description || item.text, amount: item.amount, type: item.type, category: item.category || "other", date: item.date }); } catch (err) { console.error(err); }
+          }
+        }
+        
+        // Import Notes
+        if (Array.isArray(data.notes)) {
+          for (const item of data.notes) {
+             try { 
+               const newNote = await createNote();
+               await updateNote(newNote._id || newNote.id, { title: item.title || "Untitled", content: item.content });
+             } catch (err) { console.error(err); }
+          }
+        }
 
-        localStorage.setItem(
-          "bulletJournalTasks",
-          JSON.stringify(
-            data.tasks || []
-          )
-        );
+        // Import Wishlist
+        if (Array.isArray(data.wishlist)) {
+          for (const item of data.wishlist) {
+             try { 
+               const created = await createWishlistItem({ text: item.text || "Untitled", category: item.category }); 
+               if (item.completed) {
+                 await updateWishlistItem(created._id || created.id, { completed: true });
+               }
+             } catch (err) { console.error(err); }
+          }
+        }
 
-        localStorage.setItem(
-          "bulletJournalHabits",
-          JSON.stringify(
-            data.habits || []
-          )
-        );
+        // Import Events
+        if (data.events) {
+          if (Array.isArray(data.events)) {
+            // New format
+            for (const item of data.events) {
+               try { await createEvent({ title: item.title || item.text, date: item.date, description: item.description, type: item.type }); } catch (err) { console.error(err); }
+            }
+          } else if (typeof data.events === 'object') {
+            // Old format
+            for (const dateKey of Object.keys(data.events)) {
+              if (Array.isArray(data.events[dateKey])) {
+                for (const item of data.events[dateKey]) {
+                  try { await createEvent({ title: item.title || item.text, date: dateKey }); } catch (err) { console.error(err); }
+                }
+              }
+            }
+          }
+        }
 
-        localStorage.setItem(
-          "bulletJournalFinance",
-          JSON.stringify(
-            data.transactions || []
-          )
-        );
+        // Import Monthly Goals
+        if (Array.isArray(data.monthlyGoals)) {
+          for (const item of data.monthlyGoals) {
+             try { 
+               const created = await createGoal({ text: item.text || "Untitled", scope: "monthly" }); 
+               if (item.completed) {
+                 await updateGoal(created._id || created.id, { completed: true });
+               }
+             } catch (err) { console.error(err); }
+          }
+        }
 
-        localStorage.setItem(
-          "bulletJournalWishlist",
-          JSON.stringify(
-            data.wishlist || []
-          )
-        );
+        // Import Weekly Goals
+        if (Array.isArray(data.weeklyGoals)) {
+          for (const item of data.weeklyGoals) {
+             try { 
+               const created = await createGoal({ text: item.text || "Untitled", scope: "weekly" }); 
+               if (item.completed) {
+                 await updateGoal(created._id || created.id, { completed: true });
+               }
+             } catch (err) { console.error(err); }
+          }
+        }
 
-        localStorage.setItem(
-          "bulletJournalNotes",
-          JSON.stringify(
-            data.notes || []
-          )
-        );
-
-        localStorage.setItem(
-          "bulletJournalEvents",
-          JSON.stringify(
-            data.events || {}
-          )
-        );
-
-        localStorage.setItem(
-          "bulletJournalMonthlyGoals",
-          JSON.stringify(
-            data.monthlyGoals || []
-          )
-        );
-
-        localStorage.setItem(
-          "bulletJournalWeekly",
-          JSON.stringify(
-            data.weeklyTasks || {}
-          )
-        );
-
-        localStorage.setItem(
-          "bulletJournalWeeklyGoals",
-          JSON.stringify(
-            data.weeklyGoals || []
-          )
-        );
-
-
+        // Import Preferences
         if (data.settings) {
-
-          localStorage.setItem(
-            "bulletJournalTheme",
-            data.settings.theme ||
-              "paper"
-          );
-
-          localStorage.setItem(
-            "bulletJournalCurrency",
-            data.settings.currency ||
-              "INR"
-          );
-
-          localStorage.setItem(
-            "bulletJournalFirstDay",
-            data.settings.firstDay ||
-              "monday"
-          );
+          if (data.settings.theme) setTheme(data.settings.theme);
+          if (data.settings.currency) setCurrency(data.settings.currency);
+          if (data.settings.firstDay) setFirstDay(data.settings.firstDay);
         }
 
-
-        setMessage(
-          "journal imported. refreshing..."
-        );
-
+        setMessage("journal imported. refreshing...");
         setTimeout(() => {
           window.location.reload();
-        }, 1000);
+        }, 1500);
 
       } catch (error) {
-
         console.error(error);
-
-        setMessage(
-          "could not import this file."
-        );
-
+        setMessage("could not import this file.");
+        setTimeout(() => setMessage(""), 3000);
       }
-
     };
 
     reader.readAsText(file);
@@ -305,38 +303,47 @@ function Settings() {
      CLEAR DATA
   ========================= */
 
-  const clearJournal = () => {
-
-    const confirmed =
-      window.confirm(
-        "This will permanently delete all journal data from this browser. Continue?"
-      );
-
-    if (!confirmed) return;
-
-    const keys = [
-      "bulletJournalTasks",
-      "bulletJournalHabits",
-      "bulletJournalFinance",
-      "bulletJournalWishlist",
-      "bulletJournalNotes",
-      "bulletJournalEvents",
-      "bulletJournalMonthlyGoals",
-      "bulletJournalWeekly",
-      "bulletJournalWeeklyGoals",
-    ];
-
-    keys.forEach((key) => {
-      localStorage.removeItem(key);
-    });
-
-    setMessage(
-      "journal data cleared. refreshing..."
+  const clearJournal = async () => {
+    const confirmation = window.prompt(
+      'To permanently delete ALL your journal data (tasks, finances, habits, etc.), type "CLEAR":'
     );
 
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
+    if (confirmation !== "CLEAR") {
+      if (confirmation !== null) {
+        setMessage("clear cancelled. data was not deleted.");
+        setTimeout(() => setMessage(""), 3000);
+      }
+      return;
+    }
+
+    setMessage("clearing journal data...");
+
+    try {
+      await clearJournalData();
+      
+      // Also clear any legacy localStorage state to be safe
+      const keys = [
+        "bulletJournalTasks",
+        "bulletJournalHabits",
+        "bulletJournalFinance",
+        "bulletJournalWishlist",
+        "bulletJournalNotes",
+        "bulletJournalEvents",
+        "bulletJournalMonthlyGoals",
+        "bulletJournalWeekly",
+        "bulletJournalWeeklyGoals",
+      ];
+      keys.forEach((key) => localStorage.removeItem(key));
+
+      setMessage("journal data cleared. refreshing...");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error(error);
+      setMessage("failed to clear journal.");
+      setTimeout(() => setMessage(""), 3000);
+    }
   };
 
 

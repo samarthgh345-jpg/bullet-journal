@@ -1,16 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { useJournal } from "../context/JournalContext";
-import { getEvents, createEvent, updateEvent, deleteEvent } from "../services/api";
+import { getEvents, createEvent, updateEvent, deleteEvent, getGoals, createGoal, updateGoal, deleteGoal } from "../services/api";
 import { getCalendarDays } from "../utils/calendar";
 
 function Monthly() {
-  const {
-    monthlyGoals: goals,
-    addMonthlyGoal,
-    toggleMonthlyGoal,
-    deleteMonthlyGoal,
-  } = useJournal();
-
   const today = new Date();
 
   const [currentDate, setCurrentDate] = useState(
@@ -18,6 +10,7 @@ function Monthly() {
   );
 
   const [events, setEvents] = useState([]);
+  const [goals, setGoals] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -35,11 +28,15 @@ function Monthly() {
   const days = useMemo(() => getCalendarDays(year, month), [year, month]);
 
   useEffect(() => {
-    const loadEvents = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await getEvents();
-        setEvents(data);
+        const [eventsData, goalsData] = await Promise.all([
+          getEvents(),
+          getGoals("monthly")
+        ]);
+        setEvents(eventsData);
+        setGoals(goalsData);
       } catch (error) {
         setError(error.message);
       } finally {
@@ -47,7 +44,7 @@ function Monthly() {
       }
     };
 
-    loadEvents();
+    fetchData();
   }, []);
 
   const previousMonth = () => {
@@ -117,11 +114,36 @@ function Monthly() {
     }
   };
 
-  const handleAddGoal = (e) => {
+  const handleAddGoal = async (e) => {
     e.preventDefault();
     if (!goalText.trim()) return;
-    addMonthlyGoal(goalText);
-    setGoalText("");
+    try {
+      const newGoal = await createGoal({ text: goalText, scope: "monthly" });
+      setGoals([...goals, newGoal]);
+      setGoalText("");
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
+  const handleToggleGoal = async (id) => {
+    try {
+      const goalToUpdate = goals.find(g => g._id === id);
+      if (!goalToUpdate) return;
+      const updatedGoal = await updateGoal(id, { completed: !goalToUpdate.completed });
+      setGoals(goals.map(g => g._id === id ? updatedGoal : g));
+    } catch (error) {
+      setError(error.message);
+    }
+  };
+
+  const handleDeleteGoal = async (id) => {
+    try {
+      await deleteGoal(id);
+      setGoals(goals.filter(g => g._id !== id));
+    } catch (error) {
+      setError(error.message);
+    }
   };
 
   const selectedEvents = selectedDate
@@ -286,21 +308,23 @@ function Monthly() {
           </form>
 
           <div className="monthly-goal-list">
-            {goals.length === 0 ? (
+            {loading ? (
+              <p className="monthly-empty">loading...</p>
+            ) : goals.length === 0 ? (
               <p className="monthly-empty">what do you want to accomplish?</p>
             ) : (
               goals.map((goal) => (
                 <div
                   className={goal.completed ? "monthly-goal completed" : "monthly-goal"}
-                  key={goal.id}
+                  key={goal._id}
                 >
-                  <button onClick={() => toggleMonthlyGoal(goal.id)}>
+                  <button onClick={() => handleToggleGoal(goal._id)}>
                     {goal.completed ? "✓" : ""}
                   </button>
                   <span>{goal.text}</span>
                   <button
                     className="goal-delete"
-                    onClick={() => deleteMonthlyGoal(goal.id)}
+                    onClick={() => handleDeleteGoal(goal._id)}
                   >
                     ×
                   </button>

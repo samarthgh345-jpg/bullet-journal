@@ -1,19 +1,69 @@
-import { useState } from "react";
-import { useJournal } from "../context/JournalContext";
+import { useState, useEffect } from "react";
+import {
+  getWishlist,
+  createWishlistItem,
+  updateWishlistItem,
+  deleteWishlistItem,
+} from "../services/api";
 import "./Wishlist.css";
 
-const categories = ["buy", "learn", "experience", "build"];
+const categories = ["buy", "learn", "experience", "build", "general"];
 
 function Wishlist() {
-  const { wishlist: items, addWishlistItem, toggleWishlistItem, deleteWishlistItem } = useJournal();
-
+  const [items, setItems] = useState([]);
   const [text, setText] = useState("");
   const [category, setCategory] = useState("buy");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const handleAddItem = (e) => {
+  useEffect(() => {
+    let isMounted = true;
+    const fetchWishlist = async () => {
+      try {
+        setLoading(true);
+        const data = await getWishlist();
+        if (isMounted) setItems(data);
+      } catch (err) {
+        if (isMounted) setError(err.message);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    fetchWishlist();
+    return () => { isMounted = false; };
+  }, []);
+
+  const handleAddItem = async (e) => {
     e.preventDefault();
-    addWishlistItem(text, category);
-    setText("");
+    if (!text.trim()) return;
+    try {
+      const newItem = await createWishlistItem({ text, category });
+      setItems([newItem, ...items]);
+      setText("");
+      setError("");
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleToggleItem = async (item) => {
+    try {
+      const updated = await updateWishlistItem(item._id, {
+        completed: !item.completed,
+      });
+      setItems(items.map((i) => (i._id === updated._id ? updated : i)));
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleDeleteItem = async (id) => {
+    try {
+      await deleteWishlistItem(id);
+      setItems(items.filter((i) => i._id !== id));
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   return (
@@ -23,6 +73,8 @@ function Wishlist() {
         <h2>wishlist</h2>
         <p className="date">things I want to make happen</p>
       </div>
+
+      {error && <p className="form-error" style={{ color: "#d9534f" }}>{error}</p>}
 
       <div className="journal-card form-wrapper">
         <form className="wishlist-form" onSubmit={handleAddItem}>
@@ -42,6 +94,7 @@ function Wishlist() {
             <option value="learn">things to learn</option>
             <option value="experience">things to experience</option>
             <option value="build">things to build</option>
+            <option value="general">general things</option>
           </select>
 
           <button className="add-task-button" type="submit">
@@ -61,13 +114,16 @@ function Wishlist() {
             learn: "things to learn",
             experience: "things to experience",
             build: "things to build",
+            general: "general things",
           };
 
           return (
             <div className="journal-card wishlist-card" key={categoryName}>
               <h3>{titles[categoryName]}</h3>
 
-              {categoryItems.length === 0 ? (
+              {loading ? (
+                <p style={{ padding: "10px" }}>Loading...</p>
+              ) : categoryItems.length === 0 ? (
                 <p className="wishlist-empty">nothing here yet...</p>
               ) : (
                 <div className="wishlist-items">
@@ -78,13 +134,13 @@ function Wishlist() {
                           ? "wishlist-item completed"
                           : "wishlist-item"
                       }
-                      key={item.id}
+                      key={item._id}
                     >
                       <label className="task-checkbox-wrapper">
                         <input
                           type="checkbox"
                           checked={item.completed}
-                          onChange={() => toggleWishlistItem(item.id)}
+                          onChange={() => handleToggleItem(item)}
                         />
                         <span className="checkbox-custom" />
                       </label>
@@ -93,7 +149,7 @@ function Wishlist() {
 
                       <button
                         className="delete-task remove-btn"
-                        onClick={() => deleteWishlistItem(item.id)}
+                        onClick={() => handleDeleteItem(item._id)}
                         title="Delete item"
                       >
                         ×
